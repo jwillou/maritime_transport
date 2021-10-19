@@ -1,4 +1,4 @@
-setwd("~/Desktop/Maritime prob. of invasion/")
+setwd("/Users/jannawilloughby/GDrive/Willoughby lab/maritime invasion/")
 
 #movement parameters
 prob.srce.P  = 0.9 #seq(0.1,0.9,0.2)    #probability of enough mozzies getting onto the ship that establishment is possible (whatever number this is)
