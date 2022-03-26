@@ -85,26 +85,34 @@ dir.create(paste(outdir,folder,sep=""))
 data = read.table("Output/outputsummary.csv", header=T, sep=",")
 write.table(data, paste("Output/", folder, "/outputsummary.csv", sep=""), row.names=F, col.names=T, sep=",")
 
+data = read.table("Output/output_2022-01-2117_02_43/outputsummary.csv", header=T, sep=",")
+
 ####analyze model outpu####
 colors6 = c("#d3f2a3","#97e196","#6cc08b","#4c9b82","#217a79","#074050") ##105965 <-extra color, second to last
 
+#colors and labels
+plot(-100,-100, xlim=c(0,1), ylim=c(0,1), xlab="", ylab="")
+for(v in 1:length(onship.P)){
+  points(onship.P[v],0.5, pch=19,col=colors6[v], cex=5)
+}
+
 #1. how much does change in land detection influence establishment?
 pdf(paste("Output/", folder, "/landdet_.pdf", sep=""), width = 5, height = 5)
-plot(-100,-100, xlim=c(0,1), ylim=c(0,0.5), xlab="P(removing from unloaded containers)", ylab="established populations (%)")
+plot(-100,-100, xlim=c(0,1), ylim=c(0,0.5), xlab="probability of mosquito detection in containers moved to shore", ylab="undetected populations (%)")
 for(v in 1:length(onship.P)){
   t = data[data$prob.shore==0.5 & data$prob.ship==0.5 & data$prob.est==0.5 & data$nstops==5 & data$prob.surv==0.9 & data$onship==onship.P[v], ]
-  lines(x=t$onshore, y=t$establishM, lwd=2, col=colors6[v])
-  points(x=t$onshore, y=t$establishM, pch=19, col=colors6[v])
+  lines(x=t$onshore, y=t$establishM, col=colors6[v], lwd=2.5)
+  points(x=t$onshore, y=t$establishM, pch=19, col=colors6[v], cex=1.5)
 }
 dev.off()
 
 #2. how much does change in ship-board detection influence establishment?
 pdf(paste("Output/", folder, "/shipdet_.pdf", sep=""), width = 5, height = 5)
-plot(-100,-100, xlim=c(0,1), ylim=c(0,0.5), xlab="P(removing from onboard containers)", ylab="established populations (%)")
+plot(-100,-100, xlim=c(0,1), ylim=c(0,0.5), xlab="probability of mosquito detection in containers transfered to a new ship", ylab="undetected populations (%)")
 for(v in 1:length(onshore.P)){
   t = data[data$prob.shore==0.5 & data$prob.ship==0.5 & data$prob.est==0.5 & data$nstops==5 & data$prob.surv==0.9 & data$onshore==onshore.P[v], ]
-  lines(x=t$onship, y=t$establishM, lwd=2, col=colors6[v])
-  points(x=t$onship, y=t$establishM, pch=19, col=colors6[v])
+  lines(x=t$onship, y=t$establishM, col=colors6[v], lwd=2.5)
+  points(x=t$onship, y=t$establishM, pch=19, col=colors6[v], cex=1.5)
 }
 dev.off()
 
@@ -113,16 +121,16 @@ pdf(paste("Output/", folder, "/stops_det.pdf", sep=""), width = 5, height = 5)
 plot(-100,-100, xlim=c(1,10), ylim=c(0,0.5), xlab="number of stops", ylab="established populations (%)", main="removing mosquitos from unloaded containers")
 for(v in 1:length(onshore.P)){
   t = data[data$prob.shore==0.5 & data$prob.ship==0.5 & data$prob.est==0.5 & data$prob.surv==0.9 & data$onship==0.4 & data$onshore==onshore.P[v], ]
-  lines(x=t$nstops, y=t$establishM, lwd=2, col=colors6[v])
-  points(x=t$nstops, y=t$establishM, pch=19, col=colors6[v])
+  lines(x=t$nstops, y=t$establishM, col=colors6[v], lwd=2.5)
+  points(x=t$nstops, y=t$establishM, pch=19, col=colors6[v], cex=1.5)
 }
 dev.off()
 pdf(paste("Output/", folder, "/stops_sdet.pdf", sep=""), width = 5, height = 5)
 plot(-100,-100, xlim=c(1,10), ylim=c(0,0.5), xlab="number of stops", ylab="established populations (%)", main="removing mosquitos from transfered containers")
 for(v in 1:length(onship.P)){
   t = data[data$prob.shore==0.5 & data$prob.ship==0.5 & data$prob.est==0.5 & data$prob.surv==0.9 & data$onshore==0.4 & data$onship==onship.P[v], ]
-  lines(x=t$nstops, y=t$establishM, lwd=2, col=colors6[v])
-  points(x=t$nstops, y=t$establishM, pch=19, col=colors6[v])
+  lines(x=t$nstops, y=t$establishM, col=colors6[v], lwd=2.5)
+  points(x=t$nstops, y=t$establishM, pch=19, col=colors6[v], cex=1.5)
 }
 dev.off()
 
