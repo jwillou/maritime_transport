@@ -1,35 +1,40 @@
 setwd("/Users/jannawilloughby/GDrive/Willoughby lab/maritime invasion/maritime_transport/")
 directory = getwd()
 outdir    = paste(directory,"/Output/", sep="")
- 
+
 ####model setup####
 #parameters and values
-prob.shore.P  = seq(0,1,0.1)       #probability of of container getting to shore
-prob.ship.P   = seq(0,1,0.1)       #probability of of container getting transfered to another ship
-prob.est.P    = seq(0.5,1,0.1)     #probabiility that mozzies establish in new location (once container is on shore)--Kramer study?
+prob.shore.P  = 0.5 #seq(0,1,0.1)       #probability of of container getting to shore
+prob.ship.P   = 0.5 #seq(0,1,0.1)       #probability of of container getting transfered to another ship
 nstops.P      = seq(1,10,1)        #number of stops on route between picking up mozzie and reaching destination port
-prob.surv.P   = seq(0.8,1,0.1)     #probability of enough mozzies surviving; this is applied between each port
 onshore.P     = seq(0,1,0.2)       #probability of detecting and removing mosquitos from container on land
 onship.P      = seq(0,1,0.2)       #probability of detecting and removing mosquitos from container on ship
 
 #model run management
 reps       = 1    #number of replicate runs
 contains   = 100  #number of containers per ship
-parameters = expand.grid(prob.shore.P, prob.ship.P, prob.est.P, nstops.P, prob.surv.P, onshore.P, onship.P)
-colnames(parameters) = c("prob.shore", "prob.ship", "prob.est", "nstops", "prob.surv", "onshore", "onship")
+parameters = expand.grid(prob.shore.P, prob.ship.P, nstops.P, onshore.P, onship.P)
+colnames(parameters) = c("prob.shore", "prob.ship", "nstops", "onshore", "onship")
+
+#parameters that are not expanded
+prob.surv     = c(0.9,0.035)     #probability of enough mozzies surviving; this is applied between each port
+prob.est      = c(0.9,0.09)      #probabiility that mozzies establish in new location (once container is on shore)--Kramer study?
+
+####track progress####
+print(nrow(parameters))
 
 ####run model####
 #iterate over unique combinations of parameter values, replicating reps number of times
 output = NULL
 for(p in 1:nrow(parameters)){
+  print(p)
+  
   #get parameters for this set of runs
   prob.shore = parameters$prob.shore[p]
   prob.ship  = parameters$prob.ship[p]
-  prob.est   = parameters$prob.est[p]
   nstops     = parameters$nstops[p]
-  prob.surv  = parameters$prob.surv[p]
-  onshore   = parameters$onshore[p]
-  onship  = parameters$onship[p]
+  onshore    = parameters$onshore[p]
+  onship     = parameters$onship[p]
   
   for(r in 1:reps){
     OUT = NULL
@@ -38,10 +43,12 @@ for(p in 1:nrow(parameters)){
     removed = NULL
     for(n in 1:nstops){
       #remove mozzies that died in transit
-      ship$dieroute = sample(c(1,0), nrow(ship), prob=c(1-prob.surv, prob.surv), replace=T)
-      dead    = ship[ship$dieroute==1,,drop=F]
+      dies = rbinom(n=nrow(ship),size=1,prob=rnorm(nrow(ship), prob.surv[1],prob.surv[2]))
+      dies[is.na(dies)] = 1
+      ship$dieroute = dies
+      dead    = ship[ship$dieroute==0,,drop=F]
       if(nrow(dead)>0){dead$dieroute=n}
-      ship    = ship[ship$dieroute==0,,drop=F]
+      ship    = ship[ship$dieroute==1,,drop=F]
       removed = rbind(removed, dead)
       if(nrow(ship)<1){break}
       
@@ -53,7 +60,9 @@ for(p in 1:nrow(parameters)){
       
       #check shore container mozzies, check to see if established
       toshore$rmshore = sample(c(1,0), nrow(toshore), prob=c(onshore, 1-onshore), replace=T)
-      toshore$establish[toshore$rmshore==0] = sample(c(1,0), length(toshore$establish[toshore$rmshore==0]), prob=c(prob.est, 1-prob.est), replace=T)
+      estabs = rbinom(n=length(toshore$establish[toshore$rmshore==0]), size=1, prob=rnorm(length(toshore$establish[toshore$rmshore==0]), prob.est[1],prob.est[2]))
+      estabs[is.na(estabs)] = 1
+      toshore$establish[toshore$rmshore==0] = estabs
       removed = rbind(removed, toshore)
       if(nrow(ship)<1){break}
       
@@ -63,18 +72,18 @@ for(p in 1:nrow(parameters)){
       ship          = ship[ship$transfer==0,,drop=F]
       if(nrow(toship)>0){toship$shorestop = n}
       
-      #check new ship container mozzies, see if establsihed
+      #check new ship container mozzies
       toship$rmtrans = sample(c(1,0), nrow(toship), prob=c(onship, 1-onship), replace=T)
-      toship$establish[toship$rmtrans==0] = sample(c(1,0), length(toship$establish[toship$rmtrans==0]), prob=c(prob.est, 1-prob.est), replace=T)
       removed = rbind(removed, toship)
       if(nrow(ship)<1){break}
     }
     OUT = rbind(ship, removed)
     
-    towrite = c(prob.shore, prob.ship, prob.est, nstops, prob.surv, onshore, onship, sum(OUT[,1]), sum(OUT[,2]), mean(OUT[,3]), sd(OUT[,3]), sum(OUT[,4]), mean(OUT[,4]), sd(OUT[,4]), sum(OUT[,5]), mean(OUT[,5]), sd(OUT[,5]), sum(OUT[,6]), mean(OUT[,6]), sd(OUT[,6]), sum(OUT[,7]), mean(OUT[,7]), sd(OUT[,7]), sum(OUT[,8]), mean(OUT[,8]), sd(OUT[,8]))
+    towrite = c(prob.shore, prob.ship, prob.est[1], nstops, prob.surv[1], onshore, onship, sum(OUT[,1]), sum(OUT[,2]), mean(OUT[,3]), sd(OUT[,3]), sum(OUT[,4]), mean(OUT[,4]), sd(OUT[,4]), sum(OUT[,5]), mean(OUT[,5]), sd(OUT[,5]), sum(OUT[,6]), mean(OUT[,6]), sd(OUT[,6]), sum(OUT[,7]), mean(OUT[,7]), sd(OUT[,7]), sum(OUT[,8]), mean(OUT[,8]), sd(OUT[,8]))
     output = rbind(output, towrite)
   }
 }
+
 ####copy and save data####
 colnames(output) = c("prob.shore","prob.ship","prob.est","nstops","prob.surv","onshore","onship","containers","shore","shorestopM","shorestopSD","rmshoreS","rmshoreM","rmshoreSD","transferS","transferM","transferSD","rmtransS","rmtransM","rmtransSD","dierouteS","dierouteM","dierouteSD","establishS","establishM","establishSD")
 write.table(output, paste(outdir,"outputsummary.csv", sep=""), append=F, sep=",", row.names=F, col.names=T)
@@ -84,8 +93,6 @@ dir.create(paste(outdir,folder,sep=""))
 #copy output into folder to use later
 data = read.table("Output/outputsummary.csv", header=T, sep=",")
 write.table(data, paste("Output/", folder, "/outputsummary.csv", sep=""), row.names=F, col.names=T, sep=",")
-
-data = read.table("Output/output_2022-01-2117_02_43/outputsummary.csv", header=T, sep=",")
 
 ####analyze model outpu####
 colors6 = c("#d3f2a3","#97e196","#6cc08b","#4c9b82","#217a79","#074050") ##105965 <-extra color, second to last
@@ -98,39 +105,57 @@ for(v in 1:length(onship.P)){
 
 #1. how much does change in land detection influence establishment?
 pdf(paste("Output/", folder, "/landdet_.pdf", sep=""), width = 5, height = 5)
-plot(-100,-100, xlim=c(0,1), ylim=c(0,0.5), xlab="probability of mosquito detection in containers moved to shore", ylab="undetected populations (%)")
+plot(-100,-100, xlim=c(0,1), ylim=c(0,1), xlab="probability of mosquito detection in containers moved to shore", ylab="undetected populations (%)")
+segments(x0=0,y0=1,x1=1,y1=0,col="grey50", lty=2, lwd=1.5)
 for(v in 1:length(onship.P)){
-  t = data[data$prob.shore==0.5 & data$prob.ship==0.5 & data$prob.est==0.5 & data$nstops==5 & data$prob.surv==0.9 & data$onship==onship.P[v], ]
+  t = data[data$prob.shore==0.5 & data$prob.ship==0.5 & data$prob.est==0.9 & data$nstops==10 & data$prob.surv==0.9 & data$onship==onship.P[v], ]
   lines(x=t$onshore, y=t$establishM, col=colors6[v], lwd=2.5)
   points(x=t$onshore, y=t$establishM, pch=19, col=colors6[v], cex=1.5)
 }
+v=4
+t = data[data$prob.shore==0.5 & data$prob.ship==0.5 & data$prob.est==0.9 & data$nstops==10 & data$prob.surv==0.9 & data$onship==0.6, ]
+lines(x=t$onshore, y=t$establishM, col=colors6[v], lwd=2.5)
+points(x=t$onshore, y=t$establishM, pch=19, col=colors6[v], cex=1.5)
 dev.off()
 
 #2. how much does change in ship-board detection influence establishment?
 pdf(paste("Output/", folder, "/shipdet_.pdf", sep=""), width = 5, height = 5)
-plot(-100,-100, xlim=c(0,1), ylim=c(0,0.5), xlab="probability of mosquito detection in containers transfered to a new ship", ylab="undetected populations (%)")
+plot(-100,-100, xlim=c(0,1), ylim=c(0,1), xlab="probability of mosquito detection in containers transfered to a new ship", ylab="undetected populations (%)")
+segments(x0=0,y0=1,x1=1,y1=0,col="grey50", lty=2, lwd=1.5)
 for(v in 1:length(onshore.P)){
-  t = data[data$prob.shore==0.5 & data$prob.ship==0.5 & data$prob.est==0.5 & data$nstops==5 & data$prob.surv==0.9 & data$onshore==onshore.P[v], ]
+  t = data[data$prob.shore==0.5 & data$prob.ship==0.5 & data$prob.est==0.9 & data$nstops==10 & data$prob.surv==0.9 & data$onshore==onshore.P[v], ]
   lines(x=t$onship, y=t$establishM, col=colors6[v], lwd=2.5)
   points(x=t$onship, y=t$establishM, pch=19, col=colors6[v], cex=1.5)
 }
+v=5
+t = data[data$prob.shore==0.5 & data$prob.ship==0.5 & data$prob.est==0.9 & data$nstops==10 & data$prob.surv==0.9 & data$onshore==0.6, ]
+lines(x=t$onship, y=t$establishM, col=colors6[v], lwd=2.5)
+points(x=t$onship, y=t$establishM, pch=19, col=colors6[v], cex=1.5)
 dev.off()
 
 #3. how much does number of stops influence establishment?
 pdf(paste("Output/", folder, "/stops_det.pdf", sep=""), width = 5, height = 5)
-plot(-100,-100, xlim=c(1,10), ylim=c(0,0.5), xlab="number of stops", ylab="established populations (%)", main="removing mosquitos from unloaded containers")
+plot(-100,-100, xlim=c(1,10), ylim=c(0,1), xlab="number of stops", ylab="established populations (%)", main="removing mosquitos from unloaded containers")
 for(v in 1:length(onshore.P)){
-  t = data[data$prob.shore==0.5 & data$prob.ship==0.5 & data$prob.est==0.5 & data$prob.surv==0.9 & data$onship==0.4 & data$onshore==onshore.P[v], ]
+  t = data[data$prob.shore==0.5 & data$prob.ship==0.5 & data$prob.est==0.9 & data$prob.surv==0.9 & data$onship==0.6 & data$onshore==onshore.P[v], ]
   lines(x=t$nstops, y=t$establishM, col=colors6[v], lwd=2.5)
   points(x=t$nstops, y=t$establishM, pch=19, col=colors6[v], cex=1.5)
 }
+v=4
+t = data[data$prob.shore==0.5 & data$prob.ship==0.5 & data$prob.est==0.9 & data$prob.surv==0.9 & data$onship==0.6 & data$onshore==0.6, ]
+lines(x=t$nstops, y=t$establishM, col=colors6[v], lwd=2.5)
+points(x=t$nstops, y=t$establishM, pch=19, col=colors6[v], cex=1.5)
 dev.off()
+
 pdf(paste("Output/", folder, "/stops_sdet.pdf", sep=""), width = 5, height = 5)
 plot(-100,-100, xlim=c(1,10), ylim=c(0,0.5), xlab="number of stops", ylab="established populations (%)", main="removing mosquitos from transfered containers")
 for(v in 1:length(onship.P)){
-  t = data[data$prob.shore==0.5 & data$prob.ship==0.5 & data$prob.est==0.5 & data$prob.surv==0.9 & data$onshore==0.4 & data$onship==onship.P[v], ]
+  t = data[data$prob.shore==0.5 & data$prob.ship==0.5 & data$prob.est==0.9 & data$prob.surv==0.9 & data$onshore==0.6 & data$onship==onship.P[v], ]
   lines(x=t$nstops, y=t$establishM, col=colors6[v], lwd=2.5)
   points(x=t$nstops, y=t$establishM, pch=19, col=colors6[v], cex=1.5)
 }
+v=4
+t = data[data$prob.shore==0.5 & data$prob.ship==0.5 & data$prob.est==0.9 & data$prob.surv==0.9 & data$onshore==0.6 & data$onship==0.6, ]
+lines(x=t$nstops, y=t$establishM, col=colors6[v], lwd=2.5)
+points(x=t$nstops, y=t$establishM, pch=19, col=colors6[v], cex=1.5)
 dev.off()
-
