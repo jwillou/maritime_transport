@@ -18,7 +18,7 @@ colnames(parameters) = c("prob.shore", "prob.ship", "nstops", "onshore", "onship
 
 #parameters that are not expanded
 prob.surv     = c(0.9,0.035)     #probability of enough mozzies surviving; this is applied between each port
-prob.est      = c(0.9,0.09)      #probabiility that mozzies establish in new location (once container is on shore)--Kramer study?
+prob.est      = c(0.9,0.09)      #probabiility that mozzies establish in new location (once container is on shore)
 
 ####track progress####
 print(nrow(parameters))
