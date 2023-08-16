@@ -1,11 +1,11 @@
-setwd("/Users/jannawilloughby/GDrive/Willoughby lab/maritime invasion/maritime_transport/")
+setwd("/Users/jrw0107/Google Drive/My Drive/Willoughby lab/projects - active/maritime invasion/maritime_transport/")
 directory = getwd()
 outdir    = paste(directory,"/Output/", sep="")
 
 ####model setup####
 #parameters and values
 prob.shore.P  = 0.5 #seq(0,1,0.1)       #probability of of container getting to shore
-prob.ship.P   = 0.5 #seq(0,1,0.1)       #probability of of container getting transfered to another ship
+prob.ship.P   = 0.5 #seq(0,1,0.1)       #probability of of container getting transferred to another ship
 nstops.P      = seq(1,10,1)        #number of stops on route between picking up mozzie and reaching destination port
 onshore.P     = seq(0,1,0.2)       #probability of detecting and removing mosquitos from container on land
 onship.P      = seq(0,1,0.2)       #probability of detecting and removing mosquitos from container on ship
