@@ -1,4 +1,4 @@
-setwd("/Users/jrw0107/Google Drive/My Drive/Willoughby lab/projects - active/maritime invasion/maritime_transport/")
+setwd("/Users/jannawilloughby/Google Drive/My Drive/Willoughby lab/projects - active/maritime invasion/maritime_transport/")
 directory = getwd()
 outdir    = paste(directory,"/Output/", sep="")
 
@@ -43,7 +43,7 @@ for(p in 1:nrow(parameters)){
     removed = NULL
     for(n in 1:nstops){
       #remove mozzies that died in transit
-      dies = rbinom(n=nrow(ship),size=1,prob=rnorm(nrow(ship), prob.surv[1],prob.surv[2]))
+      dies = rbinom(n=nrow(ship),size=1, prob=rnorm(nrow(ship), prob.surv[1],prob.surv[2]))
       dies[is.na(dies)] = 1
       ship$dieroute = dies
       dead    = ship[ship$dieroute==0,,drop=F]
