@@ -18,7 +18,7 @@ write.table(t2, "travel routes.csv", col.names=T, row.names=F, sep=",") #moved t
 write.table(t6, "port_locations.csv", col.names=T, row.names=F, sep=",")#moved to new directory
 
 ####begin making new map####
-setwd("/Users/jannawilloughby/Google Drive/My Drive/Willoughby lab/projects - active/maritime invasion/updatedmap/")
+setwd("/Users/jannawilloughby/Google Drive/My Drive/Willoughby lab/projects - active/maritime invasion/maritime_transport/updatedmaps/")
 library(maps)
 library(dplyr)
 library(geosphere)
@@ -26,6 +26,7 @@ library(scales)
 locations = read.table("port_locations.csv", header=T, sep=",")
 colnames(locations) = c("port", "lat", "long")
 routes = read.table("travel_routes.csv", header=T, sep=",")
+aedes  = read.table("port_aedes.csv", header=T, sep=",")
 all_pairs = merge(x=routes, y=locations, by.x="From", by.y="port")
 colnames(all_pairs) = c("From", "To", "freq", "lat_from", "long_from")
 all_pairs = merge(x=all_pairs, y=locations, by.x="To", by.y="port")
@@ -147,3 +148,16 @@ median((alldistances))
 all_pairs_di = as.data.frame(all_pairs_di)
 colnames(all_pairs_di)[10] = "distance"
 write.table(alldistances, "../maritime_transport/Output/routedistances.csv", col.names=T, row.names=F, sep=",")
+
+####aedes map####
+#map looks
+par(mar=c(0,0,0,0))
+linewd = 0.5
+shadewd = 2
+shade  = 0.5
+map('world', col="grey80", fill=TRUE, bg="white", lwd=0.05, mar=rep(0,4),border=0, ylim=c(-80,80))
+points(x=aedes$longitude[aedes$AegyptiAlb==2], y=aedes$latitude[aedes$AegyptiAlb==2], col=alpha("darkorchid3", 1), cex=0.3, pch=20)
+points(x=aedes$longitude[aedes$Alb==1 & aedes$AegyptiAlb==1], y=aedes$latitude[aedes$Alb==1 & aedes$AegyptiAlb==1], col=alpha("dodgerblue3", 1), cex=0.3, pch=20)
+points(x=aedes$longitude[aedes$Aegypti==1 & aedes$AegyptiAlb==1], y=aedes$latitude[aedes$Aegypti==1 & aedes$AegyptiAlb==1], col=alpha("firebrick", 1), cex=0.3, pch=20)
+points(x=aedes$longitude[aedes$AegyptiAlb==0], y=aedes$latitude[aedes$AegyptiAlb==0], col=alpha("chartreuse4", 1), cex=0.3, pch=20)
+
